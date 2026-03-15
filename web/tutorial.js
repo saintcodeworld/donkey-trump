@@ -11,7 +11,7 @@ const Tutorial = (() => {
     const tutorialSteps = [
         {
             title: "WELCOME TO DONKEY TRUMP",
-            content: "A classic arcade game where you earn real Solana (SOL) for completing rounds!",
+            content: "A classic arcade game where each completed round triggers a dev buy of 0.01 on coin!",
             image: "🎮"
         },
         {
@@ -25,23 +25,23 @@ const Tutorial = (() => {
             image: "🎯"
         },
         {
-            title: "EARN SOL REWARDS",
-            content: "Complete each round to earn SOL automatically sent to your wallet. The better you play, the more you earn!",
+            title: "ROUND PASS = DEV BUY",
+            content: "Each round pass automatically triggers a 0.01 dev buy on the coin. Play rounds to support the project!",
             image: "💰"
         },
         {
             title: "24-HOUR LEADERBOARD",
-            content: "Top player in 24 hours wins 3 SOL! Check the leaderboard to see your ranking.",
+            content: "Top player in 24 hours gets recognition! Check the leaderboard to see your ranking and round passes.",
             image: "🏆"
         },
         {
-            title: "YOUR WALLET",
-            content: "Your Solana wallet is stored securely in your browser. Click ACCOUNT (top-right) to view your keys and earnings.",
+            title: "YOUR ACCOUNT",
+            content: "Your game account is stored securely in your browser. Click ACCOUNT (top-right) to view your stats and round passes.",
             image: "👛"
         },
         {
             title: "READY TO PLAY?",
-            content: "Press P to pause anytime. Press ESC to return to menu. Good luck and have fun earning!",
+            content: "Press P to pause anytime. Press ESC to return to menu. Good luck and have fun supporting the coin!",
             image: "🚀"
         }
     ];

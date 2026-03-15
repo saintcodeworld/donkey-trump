@@ -175,6 +175,9 @@ class Game {
         const menuItems = this.menuOverlay.querySelectorAll('.menu-item');
         let selectedIndex = 0;
 
+        // Initialize order display based on current settings
+        document.getElementById('orderVal').textContent = this.settings.boardOrder === 0 ? 'EU' : 'USA';
+
         const updateSelection = () => {
             menuItems.forEach((item, i) => {
                 item.classList.toggle('selected', i === selectedIndex);
@@ -194,7 +197,7 @@ class Game {
             arrow.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.settings.boardOrder = this.settings.boardOrder === 0 ? 1 : 0;
-                document.getElementById('orderVal').textContent = this.settings.boardOrder === 0 ? 'EU' : 'JPN';
+                document.getElementById('orderVal').textContent = this.settings.boardOrder === 0 ? 'EU' : 'USA';
             });
         });
 
