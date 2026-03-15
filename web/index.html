@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donkey Trump</title>
+    <link rel="icon" type="image/png" href="../download.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            width: 854px;
+            height: 480px;
+        }
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        #menuOverlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.92);
+            z-index: 10;
+            color: #fff;
+        }
+        #menuOverlay h1 {
+            font-size: 28px;
+            color: #ff0000;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px #550000;
+            letter-spacing: 2px;
+        }
+        #menuOverlay h2 {
+            font-size: 12px;
+            color: #00ffff;
+            margin-bottom: 40px;
+        }
+        .menu-item {
+            font-size: 14px;
+            padding: 12px 24px;
+            margin: 6px 0;
+            cursor: pointer;
+            color: #ccc;
+            border: 2px solid transparent;
+            transition: all 0.15s;
+            min-width: 320px;
+            text-align: center;
+        }
+        .menu-item:hover, .menu-item.selected {
+            color: #ffd800;
+            border-color: #ffd800;
+            background: rgba(255,216,0,0.08);
+        }
+        .menu-setting {
+            font-size: 11px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        .menu-setting .arrow {
+            cursor: pointer;
+            color: #ffd800;
+            font-size: 16px;
+            user-select: none;
+        }
+        .menu-setting .arrow:hover { color: #fff; }
+        #controls-help {
+            position: absolute;
+            bottom: 12px;
+            left: 0; right: 0;
+            text-align: center;
+            font-size: 9px;
+            color: #555;
+        }
+        /* Wallet creation screen */
+        #walletScreen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.95);
+            z-index: 20;
+            color: #fff;
+        }
+        #walletScreen h1 {
+            font-size: 28px;
+            color: #ff0000;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px #550000;
+            letter-spacing: 2px;
+        }
+        #walletScreen h2 {
+            font-size: 12px;
+            color: #00ffff;
+            margin-bottom: 30px;
+        }
+        #walletScreen p {
+            font-size: 10px;
+            color: #aaa;
+            margin-bottom: 24px;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .wallet-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 13px;
+            padding: 14px 32px;
+            margin: 8px 0;
+            cursor: pointer;
+            color: #000;
+            background: #9945ff;
+            border: 2px solid #14f195;
+            transition: all 0.15s;
+            min-width: 320px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .wallet-btn:hover {
+            background: #14f195;
+            color: #000;
+            border-color: #9945ff;
+            transform: scale(1.03);
+        }
+        .wallet-btn:active { transform: scale(0.97); }
+        .wallet-btn.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        /* Account button (top-right) */
+        #accountBtn {
+            position: absolute;
+            top: 10px; right: 10px;
+            z-index: 15;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            padding: 8px 14px;
+            cursor: pointer;
+            color: #14f195;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #9945ff;
+            transition: all 0.15s;
+            display: none;
+        }
+        #accountBtn:hover {
+            background: #9945ff;
+            color: #fff;
+        }
+        /* Key popup modal */
+        #keyModal {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.85);
+            z-index: 25;
+        }
+        #keyModalContent {
+            background: #111;
+            border: 2px solid #9945ff;
+            padding: 28px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+        }
+        #keyModalContent h3 {
+            font-size: 14px;
+            color: #14f195;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .key-label {
+            font-size: 9px;
+            color: #9945ff;
+            margin-bottom: 4px;
+            margin-top: 14px;
+        }
+        .key-value {
+            font-size: 8px;
+            color: #ffd800;
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            word-break: break-all;
+            line-height: 1.5;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .key-value:hover { border-color: #14f195; }
+        .key-value .copied {
+            color: #14f195;
+            font-size: 8px;
+            float: right;
+        }
+        .key-warning {
+            font-size: 8px;
+            color: #ff4444;
+            margin-top: 16px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        #keyModalClose {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            color: #fff;
+            background: #333;
+            border: 1px solid #555;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            transition: all 0.15s;
+        }
+        #keyModalClose:hover { background: #555; }
+        /* Chat widget */
+        #chatWidget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 450px;
+            background: rgba(0,0,0,0.95);
+            border: 2px solid #9945ff;
+            display: flex;
+            flex-direction: column;
+            z-index: 30;
+            font-family: 'Press Start 2P', monospace;
+        }
+        #chatWidget.hidden {
+            display: none;
+        }
+        #chatHeader {
+            background: #9945ff;
+            color: #fff;
+            padding: 10px;
+            font-size: 9px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #chatToggle {
+            display: none;
+        }
+        #chatClose {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 7px;
+            line-height: 1.6;
+        }
+        .chat-message {
+            margin-bottom: 12px;
+            word-wrap: break-word;
+        }
+        .chat-wallet {
+            color: #14f195;
+            font-size: 6px;
+            margin-bottom: 3px;
+        }
+        .chat-text {
+            color: #fff;
+        }
+        .chat-time {
+            color: #666;
+            font-size: 5px;
+            margin-top: 2px;
+        }
+        #chatInputArea {
+            border-top: 1px solid #333;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        #chatInput {
+            flex: 1;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+        }
+        #chatInput:focus {
+            outline: none;
+            border-color: #9945ff;
+        }
+        #chatSend {
+            background: #14f195;
+            color: #000;
+            border: none;
+            padding: 8px 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        #chatSend:hover {
+            background: #9945ff;
+            color: #fff;
+        }
+        #chatMessages::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chatMessages::-webkit-scrollbar-track {
+            background: #111;
+        }
+        #chatMessages::-webkit-scrollbar-thumb {
+            background: #9945ff;
+        }
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('../assets/fonts/PressStart2P.ttf') format('truetype');
+        }
+
+        /* Transaction History Modal */
+        #transactionModal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.9);
+            z-index: 35;
+        }
+        #transactionModalContent {
+            background: #111;
+            border: 2px solid #14f195;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Press Start 2P', monospace;
+        }
+        #transactionHeader {
+            background: #14f195;
+            color: #000;
+            padding: 12px;
+            font-size: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #transactionClose {
+            background: none;
+            border: none;
+            color: #000;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #transactionStats {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #000;
+            border-bottom: 1px solid #333;
+        }
+        .stat-box {
+            flex: 1;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 6px;
+            color: #9945ff;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 9px;
+            color: #14f195;
+            font-weight: bold;
+        }
+        #transactionTabs {
+            display: flex;
+            border-bottom: 1px solid #333;
+        }
+        .tx-tab {
+            flex: 1;
+            padding: 10px;
+            background: #111;
+            border: none;
+            color: #888;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tx-tab.active {
+            color: #14f195;
+            border-bottom-color: #14f195;
+        }
+        #transactionList {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            min-height: 300px;
+        }
+        .tx-item {
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .tx-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .tx-status {
+            font-size: 7px;
+            padding: 3px 6px;
+            border-radius: 2px;
+        }
+        .tx-status.success { background: #14f195; color: #000; }
+        .tx-status.failed { background: #ff4444; color: #fff; }
+        .tx-status.pending { background: #ffd800; color: #000; }
+        .tx-amount, .tx-score {
+            font-size: 8px;
+            color: #14f195;
+            font-weight: bold;
+        }
+        .tx-item-details {
+            font-size: 6px;
+            color: #888;
+        }
+        .tx-date { margin-bottom: 3px; }
+        .tx-signature {
+            color: #9945ff;
+            cursor: pointer;
+            margin-top: 3px;
+        }
+        .tx-board { font-size: 7px; color: #ffd800; }
+        .tx-level { margin-top: 3px; }
+        .tx-loading, .tx-empty, .tx-error {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+            font-size: 8px;
+        }
+        .tx-error { color: #ff4444; }
+        .tx-error-msg { color: #ff4444; margin-top: 3px; font-size: 6px; }
+        #transactionFooter {
+            padding: 12px;
+            border-top: 1px solid #333;
+            text-align: center;
+        }
+        #refreshTransactions {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            padding: 8px 16px;
+            background: #9945ff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        #refreshTransactions:hover { background: #14f195; color: #000; }
+
+        /* Mobile Controls */
+        #mobileControls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            display: none;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 20px;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .mobile-dpad, .mobile-actions {
+            pointer-events: all;
+        }
+        .mobile-dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+        }
+        .dpad-btn {
+            background: rgba(153, 69, 255, 0.7);
+            border: 2px solid #14f195;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .dpad-btn:active, .dpad-btn.active {
+            background: #14f195;
+            color: #000;
+        }
+        .dpad-up { grid-column: 2; grid-row: 1; }
+        .dpad-left { grid-column: 1; grid-row: 2; }
+        .dpad-center { grid-column: 2; grid-row: 2; opacity: 0; pointer-events: none; }
+        .dpad-right { grid-column: 3; grid-row: 2; }
+        .dpad-down { grid-column: 2; grid-row: 3; }
+        .mobile-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .action-btn {
+            width: 80px;
+            height: 60px;
+            background: rgba(20, 241, 149, 0.7);
+            border: 2px solid #9945ff;
+            color: #000;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .action-btn:active, .action-btn.active {
+            background: #9945ff;
+            color: #fff;
+        }
+
+        /* Tutorial Modal */
+        #tutorialModal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.95);
+            z-index: 40;
+        }
+        #tutorialModalContent {
+            background: #111;
+            border: 3px solid #ffd800;
+            width: 90%;
+            max-width: 500px;
+            font-family: 'Press Start 2P', monospace;
+        }
+        #tutorialHeader {
+            background: #ffd800;
+            color: #000;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #tutorialTitle {
+            font-size: 10px;
+        }
+        #tutorialSkip {
+            background: none;
+            border: none;
+            color: #000;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            cursor: pointer;
+        }
+        #tutorialBody {
+            padding: 30px;
+            text-align: center;
+        }
+        #tutorialImage {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        #tutorialText {
+            font-size: 9px;
+            line-height: 1.8;
+            color: #fff;
+        }
+        #tutorialFooter {
+            padding: 20px;
+            border-top: 1px solid #333;
+        }
+        #tutorialProgress {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #333;
+        }
+        .progress-dot.active {
+            background: #ffd800;
+        }
+        #tutorialButtons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        #tutorialPrev, #tutorialNext {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            padding: 10px 20px;
+            background: #9945ff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        #tutorialNext {
+            background: #14f195;
+            color: #000;
+        }
+        #tutorialPrev:hover { background: #7a37cc; }
+        #tutorialNext:hover { background: #0ec77a; }
+
+        /* Terms of Service Modal */
+        #termsModal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.95);
+            z-index: 50;
+        }
+        #termsModalContent {
+            background: #111;
+            border: 2px solid #ff0000;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Press Start 2P', monospace;
+        }
+        #termsHeader {
+            background: #ff0000;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+        }
+        #termsHeader h3 {
+            font-size: 12px;
+        }
+        #termsBody {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            font-size: 7px;
+            line-height: 1.8;
+            color: #ccc;
+        }
+        .terms-section {
+            margin-bottom: 20px;
+        }
+        .terms-section h4 {
+            color: #ffd800;
+            font-size: 8px;
+            margin-bottom: 8px;
+        }
+        .terms-section p {
+            margin: 0;
+        }
+        .terms-updated {
+            text-align: center;
+            color: #666;
+            font-size: 6px;
+            margin-top: 20px;
+        }
+        #termsFooter {
+            padding: 20px;
+            border-top: 1px solid #333;
+        }
+        .terms-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            font-size: 7px;
+            color: #fff;
+        }
+        .terms-checkbox input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .terms-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        #termsDecline, #termsAccept {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            padding: 12px 24px;
+            border: none;
+            cursor: pointer;
+        }
+        #termsDecline {
+            background: #333;
+            color: #fff;
+        }
+        #termsAccept {
+            background: #14f195;
+            color: #000;
+        }
+        #termsAccept:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+        #termsDecline:hover { background: #555; }
+        #termsAccept:hover:not(:disabled) { background: #0ec77a; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            body { overflow: auto; }
+            #gameContainer {
+                width: 100% !important;
+                height: auto !important;
+                position: relative;
+            }
+            #accountBtn {
+                font-size: 7px;
+                padding: 6px 10px;
+            }
+            #chatToggle {
+                bottom: 200px;
+            }
+            .menu-item { font-size: 11px; min-width: 280px; }
+            #menuOverlay h1 { font-size: 20px; }
+            #menuOverlay h2 { font-size: 10px; }
+        }
+
+        @media (max-width: 480px) {
+            #transactionModalContent,
+            #tutorialModalContent,
+            #termsModalContent {
+                width: 95%;
+                max-height: 95vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Wallet creation screen -->
+        <div id="walletScreen">
+            <h1>DONKEY TRUMP</h1>
+            <h2>Play-to-Earn Arcade onchain</h2>
+            <p>Create a Solana wallet to start playing. Your wallet is generated locally and stored securely in your browser.</p>
+            <button class="wallet-btn" id="createWalletBtn">CREATE WALLET</button>
+        </div>
+
+        <!-- Account button -->
+        <button id="accountBtn">ACCOUNT</button>
+
+        <!-- Key popup modal -->
+        <div id="keyModal">
+            <div id="keyModalContent">
+                <h3>YOUR WALLET</h3>
+                <div class="key-label">PUBLIC KEY</div>
+                <div class="key-value" id="pubKeyDisplay" title="Click to copy"></div>
+                <div class="key-label">PRIVATE KEY</div>
+                <div class="key-value" id="privKeyDisplay" title="Click to copy"></div>
+                <div class="key-warning">&#9888; NEVER share your private key. Anyone with it can access your funds.</div>
+                <button id="keyModalClose">CLOSE</button>
+            </div>
+        </div>
+        <canvas id="gameCanvas" width="854" height="480"></canvas>
+        <div id="menuOverlay" style="display:none;">
+            <h1>DONKEY TRUMP</h1>
+            <h2>Play-to-Earn Arcade on chain</h2>
+            <div class="menu-item selected" data-action="start">START GAME</div>
+            <div class="menu-item" data-action="order">
+                <div>BOARDS: <span id="orderVal">EU</span></div>
+                <div class="menu-setting">
+                    <span class="arrow" data-dir="-1">&lt;</span>
+                    <span class="arrow" data-dir="1">&gt;</span>
+                </div>
+            </div>
+            <div class="menu-item" data-action="hiscores">HIGH SCORES</div>
+            <div class="menu-item" data-action="transactions">MY EARNINGS</div>
+            <div class="menu-item" data-action="tutorial">TUTORIAL</div>
+            <div id="controls-help">
+                Arrow Keys: Move &nbsp;|&nbsp; Space: Jump &nbsp;|&nbsp; P: Pause &nbsp;|&nbsp; ESC: Quit to Menu
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Widget -->
+    <div id="chatWidget">
+        <div id="chatHeader">
+            <span>LIVE CHAT</span>
+        </div>
+        <div id="chatMessages"></div>
+        <div id="chatInputArea">
+            <input type="text" id="chatInput" placeholder="Type message..." maxlength="200">
+            <button id="chatSend">SEND</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@solana/web3.js@1.98.0/lib/index.iife.min.js" crossorigin="anonymous"></script>
+    <script src="wallet.js?v=3"></script>
+    <script src="api.js?v=3"></script>
+    <script src="chat.js?v=3"></script>
+    <script src="transactions.js?v=1"></script>
+    <script src="responsive.js?v=1"></script>
+    <script src="tutorial.js?v=1"></script>
+    <script src="terms.js?v=1"></script>
+    <script src="audio.js?v=2"></script>
+    <script src="util.js?v=2"></script>
+    <script src="jumpman.js?v=2"></script>
+    <script src="kong.js?v=2"></script>
+    <script src="mobs.js?v=2"></script>
+    <script src="renderer.js?v=2"></script>
+    <script src="game.js?v=3"></script>
+    <script>
+        // Register service worker for asset caching
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/web/service-worker.js')
+                    .then(reg => console.log('Service Worker registered:', reg.scope))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
