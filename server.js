@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
-const { Connection, Keypair, PublicKey, Transaction } = require('@solana/web3.js');
+const { Connection, Keypair, PublicKey, Transaction, VersionedTransaction } = require('@solana/web3.js');
 const { createClient } = require('@supabase/supabase-js');
 const bs58 = require('bs58');
 
@@ -40,45 +40,68 @@ function getDevWallet() {
 // ---- PumpFun Token Buy ----
 async function buyPumpFunToken() {
     try {
+        console.log('=== Starting PumpFun Token Purchase ===');
+        console.log('Token Address:', PUMPFUN_TOKEN_ADDRESS);
+        console.log('Buy Amount:', PUMPFUN_BUY_AMOUNT_SOL, 'SOL');
+        
         if (!PUMPFUN_TOKEN_ADDRESS) {
             console.warn('PUMPFUN_TOKEN_ADDRESS not set, skipping buy');
             return null;
         }
 
+        // Use dev wallet from .env to buy tokens
+        console.log('Getting dev wallet...');
         const devWallet = getDevWallet();
+        console.log('Dev wallet public key:', devWallet.publicKey.toBase58());
+
+        const requestBody = {
+            publicKey: devWallet.publicKey.toBase58(),
+            action: 'buy',
+            mint: PUMPFUN_TOKEN_ADDRESS,
+            denominatedInSol: 'true',
+            amount: PUMPFUN_BUY_AMOUNT_SOL,
+            slippage: 15,
+            priorityFee: 0.0005,
+            pool: 'pump'
+        };
+        console.log('PumpPortal request:', JSON.stringify(requestBody, null, 2));
+
+        console.log('Calling PumpPortal API...');
         const response = await fetch('https://pumpportal.fun/api/trade-local', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                publicKey: devWallet.publicKey.toBase58(),
-                action: 'buy',
-                mint: PUMPFUN_TOKEN_ADDRESS,
-                denominatedInSol: 'true',
-                amount: PUMPFUN_BUY_AMOUNT_SOL,
-                slippage: 15,
-                priorityFee: 0.0005,
-                pool: 'pump'
-            })
+            body: JSON.stringify(requestBody)
         });
 
+        console.log('PumpPortal response status:', response.status);
+        
         if (!response.ok) {
             const errText = await response.text();
+            console.error('PumpPortal error response:', errText);
             throw new Error(`PumpPortal API error: ${response.status} - ${errText}`);
         }
 
+        console.log('Parsing transaction...');
         const data = await response.arrayBuffer();
-        const tx = Transaction.from(Buffer.from(data));
-        tx.sign(devWallet);
+        const tx = VersionedTransaction.deserialize(new Uint8Array(data));
+        
+        console.log('Signing transaction...');
+        tx.sign([devWallet]);
 
-        const txSignature = await connection.sendRawTransaction(tx.serialize(), {
+        console.log('Sending transaction to Solana...');
+        const txSignature = await connection.sendTransaction(tx, {
             skipPreflight: false,
             preflightCommitment: 'confirmed'
         });
 
-        console.log(`PumpFun buy executed: ${PUMPFUN_BUY_AMOUNT_SOL} SOL -> ${PUMPFUN_TOKEN_ADDRESS} | tx: ${txSignature}`);
+        console.log(`✅ PumpFun buy executed: ${PUMPFUN_BUY_AMOUNT_SOL} SOL -> ${PUMPFUN_TOKEN_ADDRESS}`);
+        console.log(`Transaction signature: ${txSignature}`);
+        console.log('=== PumpFun Purchase Complete ===');
+        
         return { txSignature, amount: PUMPFUN_BUY_AMOUNT_SOL, token: PUMPFUN_TOKEN_ADDRESS };
     } catch (e) {
-        console.error('PumpFun buy error:', e.message);
+        console.error('❌ PumpFun buy error:', e.message);
+        console.error('Full error:', e);
         return null;
     }
 }
@@ -90,6 +113,12 @@ app.use((req, res, next) => {
     res.set('Expires', '0');
     next();
 });
+
+// Redirect root to /web/
+app.get('/', (req, res) => {
+    res.redirect('/web/');
+});
+
 app.use('/', express.static(path.join(__dirname)));
 app.use('/web', express.static(path.join(__dirname, 'web')));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
@@ -163,7 +192,7 @@ app.post('/api/round-complete', async (req, res) => {
 
         if (roundErr) throw roundErr;
 
-        // Trigger PumpFun token buy on round completion
+        // Trigger PumpFun token buy on round completion using dev wallet
         let buyResult = null;
         if (PUMPFUN_TOKEN_ADDRESS) {
             buyResult = await buyPumpFunToken();
