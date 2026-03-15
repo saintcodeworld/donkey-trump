@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: donkey-kong-p2e
+    runtime: node
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SOLANA_RPC_URL
+        value: https://api.devnet.solana.com
+      - key: PUMPFUN_TOKEN_ADDRESS
+        sync: false
+      - key: PUMPFUN_BUY_AMOUNT_SOL
+        value: "0.01"
+      - key: DEVWALLET_PRIVATE_KEY
+        sync: false
