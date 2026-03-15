@@ -239,6 +239,9 @@ class Game {
             case 'tutorial':
                 this.showTutorial();
                 break;
+            case 'twitter':
+                window.open('https://x.com/DonkeyTrumpGame', '_blank');
+                break;
         }
     }
 
